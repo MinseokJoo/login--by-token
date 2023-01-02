@@ -10,6 +10,9 @@ const port = 3000;
 app.use(cookieParser())
 app.use(express.json())
 
+const ENCRYPTION_KEY = 'abcdefghijklmnop'.repeat(2)
+const IV_LENGTH = 16
+
 const sessionObj = {
     secret: 'kong', // 쿠키를 암호화할지 정해주는 옵션
     resave: false, //  세션값의 변동이 있든 없든 항상 세션을 다시 저장해줄지 정하는 옵션
@@ -18,6 +21,38 @@ const sessionObj = {
 };
 
 app.use(session(sessionObj)) // 세션을 sessionObj에서 설정한 옵션으로 사용한다는 것 같다!
+
+// 암호화?
+function encrypt(text) {
+  const iv = crypto.randomBytes(IV_LENGTH)
+  const cipher = crypto.createCipheriv(
+      'aes-256-cbc',
+      Buffer.from(ENCRYPTION_KEY),
+      iv
+  )
+  const encrypted = cipher.update(text)
+
+  return (
+      iv.toString('hex') +
+      ':' +
+      Buffer.concat([encrypted, cipher.final()]).toString('hex')
+  )
+}
+
+//복호화?
+function decrypt(text) {
+  const textParts = text.split(":")
+  const iv = Buffer.from(textParts.shift(), "hex")
+  const encryptedText = Buffer.from(textParts.join(":"), "hex")
+  const decipher = crypto.createDecipheriv(
+      "aes-256-cbc",
+      Buffer.from(ENCRYPTION_KEY),
+      iv
+  )
+  const decrypted = decipher.update(encryptedText)
+
+  return Buffer.concat([decrypted,decipher.final()]).toString()
+}
 
 // 우리의 가상 db
 const users = [

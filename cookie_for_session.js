@@ -1,11 +1,16 @@
 const express = require('express');
 const cookieParser = require('cookie-parser')
+const crypto = require("crypto")
 
 const app = express();
 const port = 3000;
 
 app.use(cookieParser())
 app.use(express.json())
+
+const ENCRYPTION_KEY = 'abcdefghijklmnop'.repeat(2)
+const IV_LENGTH = 16
+
 
 // 우리의 가상 db
 const users = [
@@ -16,7 +21,7 @@ const users = [
 
 // 우리의 가상 세션 저장소
 const sessions = []
-
+const user = sessions.find(session => session.ssid === req.cookies.ssid)
 app.get('/users', (req, res) => {
                                 // ex)  [1, 2, 5, 6, 8, 1]이 있다면 0번째 인덱스의 값만 가져온다! 5번째 인덱스의 값을 가져오는 것이 아니라!
     const user = sessions.find // sessions 안에 있는 애들 중 밑에 있는 조건을 만족하는 애를 가져오겠다! (처음으로 맞는 친구만 가져오겠다. 그 뒤에 밑에 조건을 만족한 애는 가져오지 않음)
